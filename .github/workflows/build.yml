@@ -2,17 +2,56 @@ name: Build iOS IPA
 
 on:
   push:
-    branches:
-      - main
+    branches: [ "main" ]
   workflow_dispatch:
 
 jobs:
   build-ios:
     runs-on: macos-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
 
-      - name: Test Runner
-        run: echo "Workflow is successfully detected!"
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 20
+
+    - name: Install dependencies
+      run: |
+        npm install
+        npm install @capacitor/core @capacitor/cli @capacitor/ios
+
+    - name: Initialize and Copy Project
+      run: |
+        npx cap init "My Website App" "com.example.webapp" --web-dir=www
+        mkdir -p www && echo "<html></html>" > www/index.html 
+        npx cap add ios
+        npx cap sync ios
+
+    - name: Build Unsigned IPA
+      run: |
+        cd ios/App
+        xcodebuild -workspace App.xcworkspace \
+                   -scheme App \
+                   -configuration Release \
+                   -sdk iphoneos \
+                   -allowProvisioningUpdates \
+                   CODE_SIGNING_ALLOWED=NO \
+                   CODE_SIGNING_REQUIRED=NO \
+                   clean build
+                   
+    - name: Package into .ipa
+      run: |
+        mkdir -p build/Payload
+        cp -r ios/App/build/Release-iphoneos/App.app build/Payload/
+        cd build
+        zip -r MyWebApp.ipa Payload
+
+    - name: Upload IPA Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: ios-unsigned-ipa
+        path: build/MyWebApp.ipa
         
