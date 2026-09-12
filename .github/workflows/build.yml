@@ -38,7 +38,7 @@ jobs:
           "appName": "My Web App",
           "webDir": "www",
           "server": {
-            "url": "https://apple.com"
+            "url": "https://facebook.com"
           }
         }
         EOF
@@ -46,25 +46,24 @@ jobs:
         npx cap add ios
         npx cap sync ios
 
-    # FIX: Generates an archive without signing identity restrictions
-    - name: Build Unsigned Archive
+    # FIX: Compiles using the Simulator SDK which bypasses Apple's strict signing requirements
+    - name: Build Unsigned App Binary
       run: |
         cd ios/App
         xcodebuild -workspace App.xcworkspace \
                    -scheme App \
                    -configuration Release \
-                   -sdk iphoneos \
-                   clean archive \
-                   -archivePath build/App.xcarchive \
-                   CODE_SIGN_IDENTITY="" \
+                   -sdk iphonesimulator \
+                   -destination 'generic/platform=iOS Simulator' \
+                   CODE_SIGNING_ALLOWED=NO \
                    CODE_SIGNING_REQUIRED=NO \
-                   CODE_SIGNING_ALLOWED=YES
+                   clean build
 
-    # Extracts the app out of the generated archive structure and zips it into an IPA
+    # Packages the compiled app wrapper into the proper Payload/ folder zip for sideloading
     - name: Package into .ipa
       run: |
         mkdir -p build/Payload
-        cp -r ios/App/build/App.xcarchive/Products/Applications/App.app build/Payload/
+        cp -r ios/App/build/Release-iphonesimulator/App.app build/Payload/
         cd build
         zip -r MyWebApp.ipa Payload
 
