@@ -1,49 +1,18 @@
-name: "Domain to IPA"
+name: Build iOS IPA
 
 on:
+  push:
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:
-  build:
+  build-ios:
     runs-on: macos-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-
-      - name: Install Wrapper Tools
-        run: |
-          npm install @capacitor/core @capacitor/cli @capacitor/ios
-          npx cap ios add
-          npx cap sync
-
-      - name: Compile Unsigned App
-        run: |
-          cd ios/App
-          xcodebuild clean build \
-            -workspace App.xcworkspace \
-            -scheme App \
-            -configuration Release \
-            -sdk iphoneos \
-            CODE_SIGNING_ALLOWED=NO \
-            CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGN_IDENTITY="" \
-            PROVISIONING_PROFILE_SPECIFIER=""
-
-      - name: Package into IPA
-        run: |
-          mkdir -p build/Payload
-          cp -r ios/App/build/Release-iphoneos/App.app build/Payload/
-          cd build
-          zip -r WebApp.ipa Payload
-
-      - name: Upload Completed IPA File
-        uses: actions/upload-artifact@v4
-        with:
-          name: ios-app-file
-          path: build/WebApp.ipa
-          
+      - name: Test Runner
+        run: echo "Workflow is successfully detected!"
+        
