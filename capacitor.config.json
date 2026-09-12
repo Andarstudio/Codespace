@@ -1,0 +1,9 @@
+{
+  "appId": "com.mydomain.app",
+  "appName": "My App",
+  "webDir": "www",
+  "server": {
+    "url": "https://facebook.com",
+    "cleartext": true
+  }
+}
