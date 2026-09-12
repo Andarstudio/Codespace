@@ -18,15 +18,34 @@ jobs:
       with:
         node-version: 20
 
-    - name: Install dependencies
+    # This creates a package.json automatically if it's missing from your repo
+    - name: Initialize NPM & Install Capacitor
       run: |
-        npm install
+        if [ ! -f package.json ]; then
+          npm init -y
+        fi
         npm install @capacitor/core @capacitor/cli @capacitor/ios
 
-    - name: Initialize and Copy Project
+    # Generates a clean config and web assets folder
+    - name: Initialize and Sync Project
       run: |
-        npx cap init "My Website App" "com.example.webapp" --web-dir=www
-        mkdir -p www && echo "<html></html>" > www/index.html 
+        mkdir -p www
+        if [ ! -f www/index.html ]; then
+          echo "<html><body><h1>Loading...</h1></body></html>" > www/index.html
+        fi
+        
+        # Creates a fresh configuration pointing to your target website
+        cat <<EOF > capacitor.config.json
+        {
+          "appId": "com.mywebsite.app",
+          "appName": "My Web App",
+          "webDir": "www",
+          "server": {
+            "url": "https://apple.com"
+          }
+        }
+        EOF
+
         npx cap add ios
         npx cap sync ios
 
