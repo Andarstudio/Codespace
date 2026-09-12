@@ -18,7 +18,6 @@ jobs:
       with:
         node-version: 20
 
-    # This creates a package.json automatically if it's missing from your repo
     - name: Initialize NPM & Install Capacitor
       run: |
         if [ ! -f package.json ]; then
@@ -26,7 +25,6 @@ jobs:
         fi
         npm install @capacitor/core @capacitor/cli @capacitor/ios
 
-    # Generates a clean config and web assets folder
     - name: Initialize and Sync Project
       run: |
         mkdir -p www
@@ -34,7 +32,6 @@ jobs:
           echo "<html><body><h1>Loading...</h1></body></html>" > www/index.html
         fi
         
-        # Creates a fresh configuration pointing to your target website
         cat <<EOF > capacitor.config.json
         {
           "appId": "com.mywebsite.app",
@@ -49,22 +46,25 @@ jobs:
         npx cap add ios
         npx cap sync ios
 
-    - name: Build Unsigned IPA
+    # FIX: Generates an archive without signing identity restrictions
+    - name: Build Unsigned Archive
       run: |
         cd ios/App
         xcodebuild -workspace App.xcworkspace \
                    -scheme App \
                    -configuration Release \
                    -sdk iphoneos \
-                   -allowProvisioningUpdates \
-                   CODE_SIGNING_ALLOWED=NO \
+                   clean archive \
+                   -archivePath build/App.xcarchive \
+                   CODE_SIGN_IDENTITY="" \
                    CODE_SIGNING_REQUIRED=NO \
-                   clean build
-                   
+                   CODE_SIGNING_ALLOWED=YES
+
+    # Extracts the app out of the generated archive structure and zips it into an IPA
     - name: Package into .ipa
       run: |
         mkdir -p build/Payload
-        cp -r ios/App/build/Release-iphoneos/App.app build/Payload/
+        cp -r ios/App/build/App.xcarchive/Products/Applications/App.app build/Payload/
         cd build
         zip -r MyWebApp.ipa Payload
 
